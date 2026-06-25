@@ -64,19 +64,22 @@ export default function (pi: ExtensionAPI) {
     if (named) return;
 
     const match = event.text.match(skillPattern);
-    if (!match) return;
-
-    const skillName = match[1];
-    const userPrompt = match[2].trim();
-    named = true;
+    const skillName = match?.[1] ?? null;
+    const userPrompt = (match ? match[2] : event.text).trim();
+    const prefix = skillName ? `[${skillName}] ` : "";
 
     if (!userPrompt) {
-      pi.setSessionName(`[${skillName}]`);
+      if (skillName) {
+        named = true;
+        pi.setSessionName(`[${skillName}]`);
+      }
       return;
     }
 
+    named = true;
+
     // Set a temporary name immediately so something shows up
-    pi.setSessionName(`[${skillName}] ${userPrompt.slice(0, 60)}`);
+    pi.setSessionName(`${prefix}${userPrompt.slice(0, 60)}`);
 
     // Summarize in the background with a cheap model.
     // Keep this fire-and-forget so session naming never delays skill expansion.
@@ -101,7 +104,7 @@ export default function (pi: ExtensionAPI) {
           .trim();
 
         if (summary) {
-          pi.setSessionName(`[${skillName}] ${summary}`);
+          pi.setSessionName(`${prefix}${summary}`);
         }
       } catch {
         // Keep the truncated name, no big deal
